@@ -148,6 +148,27 @@ pub fn run_flash_download(
             }
         })?;
     } else {
+        log::warn!("Going without a progress bar, baby!");
+        let progress = FlashProgress::new(move |event| {
+            use ProgressEvent::*;
+            match event {
+                Initialized { .. } => {},
+                StartedFilling => {},
+                PageFilled { .. } => {},
+                FailedFilling => {},
+                FinishedFilling => {},
+                StartedErasing => {},
+                v @ SectorErased { .. } => log::warn!("{:?}", v),
+                FailedErasing => {},
+                FinishedErasing => {},
+                StartedProgramming => {},
+                v @ PageProgrammed { .. } => log::warn!("{:?}", v),
+                FailedProgramming => {},
+                FinishedProgramming => {},
+                DiagnosticMessage { message } => log::warn!("DiagMessage: {}", message.trim_end()),
+            }
+        });
+        download_option.progress = Some(progress);
         loader.commit(session, download_option).map_err(|error| {
             OperationError::FlashingFailed {
                 source: error,

@@ -85,6 +85,19 @@ enum TargetGen {
     },
     /// Generates a target yaml from a flash algorithm Rust project.
     ///
+    /// Extracts parameters and functions from the ELF and generates the target yaml file
+    GenerateDefinition {
+        /// The path of the template YAML definition file.
+        /// This file plus the information of the ELF will be merged
+        /// and stored into the `definition_export_path` file.
+        template_path: PathBuf,
+        /// The path of the completed YAML definition file.
+        definition_export_path: PathBuf,
+        /// The path to the ELF.
+        target_artifact: PathBuf,
+    },
+    /// Generates a target yaml from a flash algorithm Rust project.
+    ///
     /// Extracts parameters and functions from the ELF, generates the target yaml file
     /// and runs the flash algorithm on the given attached target.
     ///
@@ -126,6 +139,21 @@ fn main() -> Result<()> {
             update,
             name,
         )?,
+        TargetGen::GenerateDefinition {
+            template_path,
+            definition_export_path,
+            target_artifact,
+        } => {
+            println!("Generating the YAML file in `{definition_export_path:?}`");
+            std::fs::copy(template_path, definition_export_path.as_path())?;
+            cmd_elf(
+                target_artifact.as_path(),
+                true,
+                Some(definition_export_path.as_path()),
+                true,
+                Some(String::from("algorithm-test")),
+            )?;
+        },
         TargetGen::Arm {
             output_dir,
             pack_filter: chip_family,
